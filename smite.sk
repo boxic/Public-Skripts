@@ -1,0 +1,4 @@
+command /smite [<player>]:
+	permission: *
+	trigger:
+		strike lightning at argument-1
