@@ -1,0 +1,38 @@
+#
+#	CONFIG
+#
+
+options:
+	kills-per-level: 5
+	levels-per-key: 10
+	key-type: "Cosm"
+
+#
+#	LEVELING SYSTEM
+#
+
+on first join:
+	set {kills::%uuid of player%} to 0
+	set {level::%uuid of player%} to 0
+
+on join:
+	if {kills::%uuid of player%} is not set:
+		set {kills::%uuid of player%} to 0
+	if {level::%uuid of player%} is not set:
+		set {level::%uuid of player%} to 0
+
+on death of player:
+	if attaker is a player:
+		add 1 to {kills::%uuid of attacker%}
+		if {kills::%uuid of attacker%} = {@kills-per-level}:
+			add 1 to {level::%uuid of attacker%}
+			if {level::%uuid of attacker%} = {@levels-per-key}:
+				set {kills::%uuid of attacker%} to 0
+				execute console command "/cc give P %{@key-type}% 1 player"
+
+#
+#	CHAT FORMATTING
+#
+
+on chat:
+	set chat format to "&8[&f{level::%uuid of player%}&8]&r %colored player's prefix% %player%&f: %message%"
