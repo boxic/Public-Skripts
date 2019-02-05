@@ -8,31 +8,101 @@ options:
 	key-type: "Cosm"
 
 #
+#	SCOREBOARD
+#
+
+on load:
+	if {topkills::1} is not set:
+		set {topkills::1} to "-"
+		set {topkills::1::value} to 0
+		set {topkills::1::uuid}
+	if {topkills::2} is not set:
+		set {topkills::2} to "-"
+		set {topkills::2::value} to 0
+		set {topkills::2::uuid}
+	if {topkills::3} is not set:
+		set {topkills::3} to "-"
+		set {topkills::3::value} to 0
+		set {topkills::3::uuid}
+
+on join:
+	set {name::%uuid of player%} to player
+
+every 30 seconds:
+	loop {kills::*}:
+		if loop-value > {topkills::1::value}:
+			set {topkills::3::value} to {topkills::2::value}
+			set {topkills::3::uuid} to {topkills::2::uuid}
+			set {topkills::3} to {topkills::2}
+			set {topkills::2::value} to {topkills::1::value}
+			set {topkills::2::uuid} to {topkills::1::uuid}
+			set {topkills::2} to {topkills::1}
+			set {topkills::1::value} to loop-value
+			set {topkills::1::uuid} to loop-index
+			set {topkills::1} to {name::%loop-index%}
+		else if loop-value > {topkills::2::value}:
+			set {topkills::3::value} to {topkills::2::value}
+			set {topkills::3::uuid} to {topkills::2::uuid}
+			set {topkills::3} to {topkills::2}
+			set {topkills::2::value} to loop-value
+			set {topkills::2::uuid} to loop-index
+			set {topkills::2} to {name::%loop-index%}
+		else if loop-value > {topkills::3::value}:
+			set {topkills::3::value} to loop-value
+			set {topkills::3::uuid} to loop-index
+			set {topkills::3} to {name::%loop-index%}
+
+every second:
+	loop all players:
+		wipe loop-player's sidebar
+		set name of sidebar of loop-player to "&5&lDarkStep   &0"
+		set score "&8&m- ---- -----------" in sidebar of loop-player to 12
+		set score " " in sidebar of loop-player to 11
+		set score "&8» &dTOP KILLS" in sidebar of loop-player to 10
+		set score "&7{topkills::1::value} &f%{topkills::1}%" in sidebar of loop-player to 9
+		set score "&7{topkills::2::value} &f%{topkills::2}%" in sidebar of loop-player to 8
+		set score "&7{topkills::3::value} &f%{topkills::3}%" in sidebar of loop-player to 7
+		set score "  " in sidebar of loop-player to 6
+		set score "&8» &dKills&7/&5Deaths:" in sidebar of loop-player to 5
+		set score "&7Kills: &f%{kills::%loop-player%}%" in sidebar of loop-player to 4
+		set score "&7Deaths: &f%{deaths::%loop-player%}%" in sidebar of loop-player to 3
+		set score "   " in sidebar of loop-player to 2
+		set score "&8&m------ ----- -----" in sidebar of loop-player to 1
+
+#
 #	LEVELING SYSTEM
 #
 
 on first join:
-	set {kills::%uuid of player%} to 0
+	set {killtracker::%uuid of player%} to 0
 	set {level::%uuid of player%} to 0
+	set {keytracker::%uuid of player%} to 0
 
 on join:
-	if {kills::%uuid of player%} is not set:
-		set {kills::%uuid of player%} to 0
+	if {killtracker::%uuid of player%} is not set:
+		set {killtracker::%uuid of player%} to 0
 	if {level::%uuid of player%} is not set:
 		set {level::%uuid of player%} to 0
+	if {keytracker::%uuid of player%} is not set:
+		set {keytracker::%uuid of player%} to 0
 
-on death of player:
-	if attaker is a player:
-		add 1 to {kills::%uuid of attacker%}
-		if {kills::%uuid of attacker%} = {@kills-per-level}:
-			add 1 to {level::%uuid of attacker%}
-			if {level::%uuid of attacker%} = {@levels-per-key}:
-				set {kills::%uuid of attacker%} to 0
-				execute console command "/cc give P %{@key-type}% 1 player"
+on death:
+	if victim is a player:
+		if attaker is a player:
+			add 1 to {kills::%uuid of attacker%}
+			add 1 to {deaths::%uuid of victim%}
+			add 1 to {killtracker::%uuid of attacker%}
+			if {killtracker::%uuid of attacker%} >= {@kills-per-level}:
+				add 1 to {level::%uuid of attacker%}
+				add 1 to {keytracker::%uuid of attaker%}
+				set {killtracker::%uuid of attacker%} to 0
+				if {keytracker::%uuid of attaker%} >= {@levels-per-key}:
+					set {keytracker::%uuid of attaker%} to 0
+					execute console command "/cc give P %{@key-type}% 1 player"
 
 #
 #	CHAT FORMATTING
 #
 
 on chat:
-	set chat format to "&8[&f{level::%uuid of player%}&8]&r %colored player's prefix% %player%&f: %message%"
+	set chat format to "&8[&f{level::%uuid of player%}&8]&r %player's prefix% %player%&f: %message%"
